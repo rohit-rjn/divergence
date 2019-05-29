@@ -21,16 +21,13 @@ def peakdet(v, delta, x = None):
     v = asarray(v)
     
     if len(v) != len(x):
-        #sys.exit('Input vectors v and x must have same length')
-        print('Input vectors v and x must have same length')
-
+        raise ValueError('Input vectors v and x must have same length')
+    
     if not isscalar(delta):
-        #sys.exit('Input argument delta must be a scalar')
-        print('Input argument delta must be a scalar')
-
+        raise ValueError('Input argument delta must be a scalar')
+    
     if delta <= 0:
-        #sys.exit('Input argument delta must be positive')
-        print('Input argument delta must be positive')
+        raise ValueError('Input argument delta must be positive')
 
     mn, mx = Inf, -Inf
     mnpos, mxpos = NaN, NaN
@@ -68,7 +65,6 @@ def add_macd(df):
     df['macdsignal'] = output[1]
     df['macdhist'] = output[2]
     return df
-
 
 #EMA of price for smoothing the curve
 def add_ema(df):
@@ -135,7 +131,6 @@ def check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m):
 
     return slope, intercept, r_value, p_value, std_err, j,k
 
-
 # This one different that previous as, as it doesn't look into pas
 def check_previous_minima_v1(prev_local_minima,new_local_minima, df, mintab_m):
         
@@ -165,8 +160,6 @@ def check_previous_minima_v1(prev_local_minima,new_local_minima, df, mintab_m):
     y= local_minimas_macd_list[:,1]
     slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
     return slope, intercept, r_value, p_value, std_err, j,k
-
-
 
 def check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m):
     start= prev_local_maxima[0]
@@ -221,8 +214,6 @@ def check_previous_maxima_v1(prev_local_maxima,new_local_maxima, df, maxtab_m):
     slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
     return slope, intercept, r_value, p_value, std_err, j,k
     
-
-
 def add_divergence(df2,df, mintab_close, maxtab_close, mintab_macd, maxtab_macd, smoothing_price_pct = 0.03, smoothing_macd=5):
     mintab_c = mintab_close.tolist()
     maxtab_c = maxtab_close.tolist()
@@ -389,7 +380,6 @@ def find_complete(df, divergence_list):
                 df['signal_complete_end'].loc[j]=1
     return df
 
-
 def divergence_to_ts(df, divergence_list):
     start = []
     end = []
@@ -427,7 +417,6 @@ def add_kalman(df):
     state_means = pd.Series(state_means.flatten(), index=df['close'].index)
     df['kf']= state_means
     return df
-    
 
 def find_divergence(df):
     signals = []
@@ -447,9 +436,3 @@ def find_divergence(df):
     #print(divergence)
     div_df = divergence_to_ts(df, divergence)
     return div_df
-
-
-
-
-
-
