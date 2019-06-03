@@ -5,3 +5,4 @@ talib
 json
 pykalman
 datetime
+git+git://github.com/anfederico/Gemini.git

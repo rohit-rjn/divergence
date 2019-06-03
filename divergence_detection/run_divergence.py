@@ -1,27 +1,36 @@
 from divergence_signals import find_divergence
 from get_data import get_hourly, resample_data
 import json
+from gemini  import data, engine, helpers
+import datetime 
 
 def get_df(token, duration):
     duration = duration.split()
-    df = get_hourly("BTC")
+    df = get_hourly(token)
     df = resample_data(df, duration[0],duration[1])
     df = df.reset_index(level=None, drop=False, inplace=False, col_level=0)
-    return df
+
+    start_ts = "2017-01-01 00:00:00"
+    end_ts = str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    token_weekly = 'BTC_USD'
+    df_weekly = data.get_htf_candles(token_weekly, "Bitfinex", "7-DAY", start_ts, end_ts)
+    return df, df_weekly
 
 def get_signals(token_list,duration):
     signals =[]
     for i in range(len(token_list)):
-        df = get_df(token_list[i], duration)
-        div_df = find_divergence(df)
         
-        
+        df, df_weekly = get_df(token_list[i], duration)
+        div_df = find_divergence(df, df_weekly, duration)
         dict_div = {}
         dict_div['token']=token_list[i]
         dict_div['duration']=duration
         dict_div['start']=div_df['start']
         dict_div['end']=div_df['end']
         dict_div['type']=div_df['type']
+        dict_div['cosine']=div_df['cosine']
+        dict_div['market_state']=div_df['market_state']
+        dict_div['volatility']=div_df['volatility']
         json_string=json.dumps(dict_div, default=str)
         signals.append(json_string)
     return signals
