@@ -106,7 +106,7 @@ def rolling_volatility(df, duration):
     df['rolling_volatility'] = volList
     
     return df
-    
+
 # Code to Merge consecutive Divergences 
 def merge(divergence_list):
     divergence_merge = []
@@ -448,6 +448,10 @@ def add_trends(df):
     for i in range(len(df)-2):
         if(df['macdhist'].iloc[i] < df['macdhist'].iloc[i+1] and df['macdhist'].iloc[i+1] < df['macdhist'].iloc[i+2]):
             df['trend'].iloc[i+2]=1
+        
+        elif(df['macdhist'].iloc[i] > df['macdhist'].iloc[i+1] and df['macdhist'].iloc[i+1] > df['macdhist'].iloc[i+2]):
+            df['trend'].iloc[i+2]= -1
+    return df
 
 def divergence_to_ts(df, divergence_list):
     start = []
@@ -474,17 +478,15 @@ def divergence_to_ts(df, divergence_list):
     else:
         return None
 
-        
-        elif(df['macdhist'].iloc[i] > df['macdhist'].iloc[i+1] and df['macdhist'].iloc[i+1] > df['macdhist'].iloc[i+2]):
-            df['trend'].iloc[i+2]= -1
+
     return df
 
 
 def add_state(df_weekly, div_df):
     df_weekly = add_macd_weekly(df_weekly)
     df_weekly = add_trends(df_weekly)
+    #print(df_weekly.tail())
 
-    div_df['market_state']=None
     if df_weekly['trend'].iloc[-1] == 1:
         div_df['market_state']='Bullish'
     elif df_weekly['trend'].iloc[-1] == -1:
@@ -496,12 +498,14 @@ def add_volatility(df,div_df):
     div_df['volatility']=None
     mean = df['rolling_volatility'].mean()
     std = df['rolling_volatility'].std()
-    if df['rolling_volatility'].iloc[-1] < (mean+std):
+    if df['rolling_volatility'].iloc[-1] < (mean-std):
         div_df['volatility'] = 'Low'
     elif df['rolling_volatility'].iloc[-1] > (mean+std):
         div_df['volatility'] = 'High'
-    else:
+    else :
         div_df['volatility']='Medium'
+
+    return div_df
 
 def find_divergence(df, df_weekly, duration):
     #duration= duration.split()

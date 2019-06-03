@@ -9,11 +9,12 @@ def get_df(token, duration):
     df = get_hourly(token)
     df = resample_data(df, duration[0],duration[1])
     df = df.reset_index(level=None, drop=False, inplace=False, col_level=0)
-
+    #print(df.tail())
     start_ts = "2017-01-01 00:00:00"
     end_ts = str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     token_weekly = 'BTC_USD'
     df_weekly = data.get_htf_candles(token_weekly, "Bitfinex", "7-DAY", start_ts, end_ts)
+    #print(df_weekly.tail())
     return df, df_weekly
 
 def get_signals(token_list,duration):
