@@ -21,16 +21,13 @@ def peakdet(v, delta, x = None):
     v = asarray(v)
     
     if len(v) != len(x):
-        #sys.exit('Input vectors v and x must have same length')
-        print('Input vectors v and x must have same length')
-
+        raise ValueError('Input vectors v and x must have same length')
+    
     if not isscalar(delta):
-        #sys.exit('Input argument delta must be a scalar')
-        print('Input argument delta must be a scalar')
-
+        raise ValueError('Input argument delta must be a scalar')
+    
     if delta <= 0:
-        #sys.exit('Input argument delta must be positive')
-        print('Input argument delta must be positive')
+        raise ValueError('Input argument delta must be positive')
 
     mn, mx = Inf, -Inf
     mnpos, mxpos = NaN, NaN
@@ -69,7 +66,6 @@ def add_macd(df):
     df['macdhist'] = output[2]
     return df
 
-
 #EMA of price for smoothing the curve
 def add_ema(df):
     ema_close = df['close'].ewm(span=5,min_periods=0,adjust=False,ignore_na=False).mean() #talib.EMA(df['close'].values,10)
@@ -101,6 +97,16 @@ def extrema_price(df, smoothing_factor=1):
     maxtab_close, mintab_close = peakdet(df['kf'],smoothing_factor)
     return df, maxtab_close, mintab_close
 
+def rolling_volatility(df, duration):
+    duration = duration.split()
+    df['rolling_volatility']=0
+    rolling_volatility_period = int(144/int(duration[0]))
+    roller = pd.Series.rolling(df['close'].pct_change(),rolling_volatility_period)
+    volList = roller.std(ddof=0)
+    df['rolling_volatility'] = volList
+    
+    return df
+    
 # Code to Merge consecutive Divergences 
 def merge(divergence_list):
     divergence_merge = []
@@ -149,7 +155,6 @@ def check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m):
 
     return slope, intercept, r_value, p_value, std_err, j,k
 
-
 # This one different that previous as, as it doesn't look into pas
 def check_previous_minima_v1(prev_local_minima,new_local_minima, df, mintab_m):
         
@@ -179,8 +184,6 @@ def check_previous_minima_v1(prev_local_minima,new_local_minima, df, mintab_m):
     y= local_minimas_macd_list[:,1]
     slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
     return slope, intercept, r_value, p_value, std_err, j,k
-
-
 
 def check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m):
     start= prev_local_maxima[0]
@@ -234,7 +237,7 @@ def check_previous_maxima_v1(prev_local_maxima,new_local_maxima, df, maxtab_m):
     y= local_maximas_macd_list[:,1]
     slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
     return slope, intercept, r_value, p_value, std_err, j,k
-    
+
 def signal_strength_cosine(df, divergence_list):
     #Step 1 Convert signal to Vectors
     vector_macd = []
@@ -277,7 +280,6 @@ def signal_strength_cosine(df, divergence_list):
     else:
         return None
     
-
 def add_divergence(df2,df, mintab_close, maxtab_close, mintab_macd, maxtab_macd, smoothing_price_pct = 0.03, smoothing_macd=5):
     mintab_c = mintab_close.tolist()
     maxtab_c = maxtab_close.tolist()
@@ -431,6 +433,7 @@ def find_complete(df, divergence_list):
 
 
 
+
 #Finding MACD and adding to df
 def add_macd_weekly(df):
     output = talib.MACD(df['close'].values, fastperiod=50, slowperiod=100, signalperiod=20)
@@ -445,6 +448,32 @@ def add_trends(df):
     for i in range(len(df)-2):
         if(df['macdhist'].iloc[i] < df['macdhist'].iloc[i+1] and df['macdhist'].iloc[i+1] < df['macdhist'].iloc[i+2]):
             df['trend'].iloc[i+2]=1
+
+def divergence_to_ts(df, divergence_list):
+    start = []
+    end = []
+    signal_type = []
+    for i in range(len(divergence_list)):
+        start.append(df['date'].loc[divergence_list[i][0]])
+        end.append(df['date'].loc[divergence_list[i][1]])
+        if(divergence_list[i][2]==1):
+            signal_type.append('Bullish')
+        elif divergence_list[i][2]==2:
+              signal_type.append('Hidden Bullish')
+        elif divergence_list[i][2]==3:
+            signal_type.append('Bearish')
+        elif divergence_list[i][2]==4:
+            signal_type.append('Hidden Bearish')
+    
+    df_signal = pd.DataFrame()
+    df_signal['start']=start
+    df_signal['end']=end
+    df_signal['type']=signal_type
+    if len(df_signal)>0:
+        return df_signal.iloc[-1]
+    else:
+        return None
+
         
         elif(df['macdhist'].iloc[i] > df['macdhist'].iloc[i+1] and df['macdhist'].iloc[i+1] > df['macdhist'].iloc[i+2]):
             df['trend'].iloc[i+2]= -1
@@ -492,11 +521,5 @@ def find_divergence(df, df_weekly, duration):
     #print(divergence)
     div_df = signal_strength_cosine(df, divergence)
     div_df = add_state(df_weekly,div_df)
-
+    div_df = add_volatility(df, div_df)
     return div_df
-
-
-
-
-
-
