@@ -278,7 +278,7 @@ def signal_strength_cosine(df, divergence_list):
     if len(df_signal)>0:
         return df_signal.iloc[-1]
     else:
-        print('----------------------------returninig None')
+        #print('----------------------------returninig None')
         return None
     
 def add_divergence(df2,df, mintab_close, maxtab_close, mintab_macd, maxtab_macd, smoothing_price_pct = 0.03, smoothing_macd=5):
