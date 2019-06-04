@@ -98,9 +98,9 @@ def extrema_price(df, smoothing_factor=1):
     return df, maxtab_close, mintab_close
 
 def rolling_volatility(df, duration):
-    duration = duration.split()
+    #duration = duration.split()
     df['rolling_volatility']=0
-    rolling_volatility_period = int(144/int(duration[0]))
+    rolling_volatility_period = int(144/int(duration))
     roller = pd.Series.rolling(df['close'].pct_change(),rolling_volatility_period)
     volList = roller.std(ddof=0)
     df['rolling_volatility'] = volList
@@ -278,6 +278,7 @@ def signal_strength_cosine(df, divergence_list):
     if len(df_signal)>0:
         return df_signal.iloc[-1]
     else:
+        print('----------------------------returninig None')
         return None
     
 def add_divergence(df2,df, mintab_close, maxtab_close, mintab_macd, maxtab_macd, smoothing_price_pct = 0.03, smoothing_macd=5):
@@ -476,16 +477,16 @@ def divergence_to_ts(df, divergence_list):
     if len(df_signal)>0:
         return df_signal.iloc[-1]
     else:
-        return None
+        
+        return 0
 
 
-    return df
 
 
 def add_state(df_weekly, div_df):
+    
     df_weekly = add_macd_weekly(df_weekly)
     df_weekly = add_trends(df_weekly)
-    #print(df_weekly.tail())
 
     if df_weekly['trend'].iloc[-1] == 1:
         div_df['market_state']='Bullish'
@@ -498,6 +499,7 @@ def add_volatility(df,div_df):
     div_df['volatility']=None
     mean = df['rolling_volatility'].mean()
     std = df['rolling_volatility'].std()
+    #print('-------------', df.tail())
     if df['rolling_volatility'].iloc[-1] < (mean-std):
         div_df['volatility'] = 'Low'
     elif df['rolling_volatility'].iloc[-1] > (mean+std):
@@ -514,7 +516,7 @@ def find_divergence(df, df_weekly, duration):
     df = add_macd(df)
     df = add_kalman(df)
     df = rolling_volatility(df,duration)
-
+    #print(df.tail())
     df1 = df[0:10]
     df2 = df[9:]
     df1, maxtab_macd, mintab_macd = extrema_macd(df1,smoothing_factor=(0.001*df['close'].loc[1]))
@@ -522,8 +524,13 @@ def find_divergence(df, df_weekly, duration):
     df2,divergence, mintab_c, maxtab_c, mintab_m, maxtab_m = add_divergence(df2,df, mintab_close, 
                                                                         maxtab_close, mintab_macd, maxtab_macd, 
                                                                         smoothing_price_pct=0.01, smoothing_macd=0.001)
+    
     #print(divergence)
+    div_df = {}
     div_df = signal_strength_cosine(df, divergence)
-    div_df = add_state(df_weekly,div_df)
-    div_df = add_volatility(df, div_df)
-    return div_df
+    if(div_df is None):
+        return None
+    else:
+        div_df = add_state(df_weekly,div_df)
+        div_df = add_volatility(df, div_df)
+        return div_df
