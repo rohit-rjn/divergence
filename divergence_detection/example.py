@@ -14,5 +14,6 @@ token_list = ['BTC', 'ETH', 'XRP', 'LTC', 'BAB', 'BCH', 'EOS',
 				'ZEN', 'SAN', 'PAI', 'ARK','MONA', 'DGD', 'GXC', 'WAX',
 				'CLAM', 'AION', 'LRC', 'MATIC', 'MANA', 'ELA', 'LOOM',
 				'PPT', 'NET' ]                                               
-signals = get_signals(token_list,'4 HOUR')
+duration_list = ['2 HOUR','4 HOUR','8 HOUR','12 HOUR']
+signals = get_signals(token_list,duration_list)
 print(signals)
