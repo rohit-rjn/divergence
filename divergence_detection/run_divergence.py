@@ -1,16 +1,11 @@
 from divergence_signals import find_divergence
 from get_data import get_hourly, get_weekly, resample_data
 import json
-from gemini  import data, engine, helpers
 import datetime 
 
 def get_df(token):
     #duration = duration.split()
     df = get_hourly(token)
-    #df = resample_data(df, duration[0],duration[1])
-    #df = df.reset_index(level=None, drop=False, inplace=False, col_level=0)
-
-    #print(df.tail())
     df_weekly = get_weekly(token)
     df_weekly = resample_data(df_weekly, '1','WEEK')
     df_weekly = df_weekly.reset_index(level=None, drop=False, inplace=False, col_level=0)

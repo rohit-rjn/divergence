@@ -278,7 +278,7 @@ def signal_strength_cosine(df, divergence_list):
     if len(df_signal)>0:
         return df_signal.iloc[-1]
     else:
-        #print('----------------------------returninig None')
+
         return None
     
 def add_divergence(df2,df, mintab_close, maxtab_close, mintab_macd, maxtab_macd, smoothing_price_pct = 0.03, smoothing_macd=5):
@@ -454,34 +454,6 @@ def add_trends(df):
             df['trend'].iloc[i+2]= -1
     return df
 
-def divergence_to_ts(df, divergence_list):
-    start = []
-    end = []
-    signal_type = []
-    for i in range(len(divergence_list)):
-        start.append(df['date'].loc[divergence_list[i][0]])
-        end.append(df['date'].loc[divergence_list[i][1]])
-        if(divergence_list[i][2]==1):
-            signal_type.append('Bullish')
-        elif divergence_list[i][2]==2:
-              signal_type.append('Hidden Bullish')
-        elif divergence_list[i][2]==3:
-            signal_type.append('Bearish')
-        elif divergence_list[i][2]==4:
-            signal_type.append('Hidden Bearish')
-    
-    df_signal = pd.DataFrame()
-    df_signal['start']=start
-    df_signal['end']=end
-    df_signal['type']=signal_type
-    if len(df_signal)>0:
-        return df_signal.iloc[-1]
-    else:
-        
-        return 0
-
-
-
 
 def add_state(df_weekly, div_df):
     
@@ -499,7 +471,6 @@ def add_volatility(df,div_df):
     div_df['volatility']=None
     mean = df['rolling_volatility'].mean()
     std = df['rolling_volatility'].std()
-    #print('-------------', df.tail())
     if df['rolling_volatility'].iloc[-1] < (mean-std):
         div_df['volatility'] = 'Low'
     elif df['rolling_volatility'].iloc[-1] > (mean+std):
