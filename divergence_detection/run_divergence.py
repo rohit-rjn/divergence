@@ -17,6 +17,8 @@ def get_signals(token_list,duration):
     for i in range(len(token_list)):
         
         df, df_weekly = get_df(token_list[i])
+
+        
         for j in range(len(duration)):
             curr_duration = duration[j]
             #print(curr_duration)

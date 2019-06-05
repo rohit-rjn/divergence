@@ -19,12 +19,6 @@ def add_macd(df):
     df['macdhist'] = output[2]
     return df
 
-#EMA of price for smoothing the curve
-def add_ema(df):
-    ema_close = df['close'].ewm(span=5,min_periods=0,adjust=False,ignore_na=False).mean() #talib.EMA(df['close'].values,10)
-    df['ema']=ema_close
-    #df['ema']=df['close']
-    return df
 
 # Add Kalman Filter to the the DataFrame 
 def add_kalman(df):
@@ -40,14 +34,7 @@ def add_kalman(df):
     df['kf']= state_means
     return df
 
-def rolling_volatility(df, duration):
-    #duration = duration.split()
-    df['rolling_volatility']=0
-    rolling_volatility_period = int(144/int(duration))
-    roller = pd.Series.rolling(df['close'].pct_change(),rolling_volatility_period)
-    volList = roller.std(ddof=0)
-    df['rolling_volatility'] = volList
-    return df
+
 
 # Code to Merge consecutive Divergences 
 def merge(divergence_list):
@@ -74,8 +61,6 @@ def check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m, flag
     local_minimas_macd_list = []
     j=0
     k=0
-    x=0
-    y=0
     for i in range(1,len(mintab_m)):
         if(mintab_m[i-1][0] <= start and mintab_m[i][0] >= start and flag==0):
             local_minimas_macd_list.append(mintab_m[i-1])
@@ -105,8 +90,6 @@ def check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m, flag
     local_maximas_macd_list = []
     j=0
     k=0
-    x=0
-    y=0
     for i in range(1,len(maxtab_m)):
         
         if maxtab_m[i-1][0]<= start and maxtab_m[i][0] >= start and flag==0:
@@ -168,11 +151,11 @@ def signal_strength_cosine(df, divergence_list):
     else:
         return None
     
-def add_divergence(df,smoothing_price_pct = 0.03, smoothing_macd=5):
-    mintab_c = []#mintab_close.tolist()
-    maxtab_c = []#maxtab_close.tolist()
-    mintab_m = []#mintab_macd.tolist()
-    maxtab_m = []#maxtab_macd.tolist()
+def add_divergence(df,smoothing_price_pct = 0.02, smoothing_macd=0.001):
+    mintab_c = []
+    maxtab_c = []
+    mintab_m = []
+    maxtab_m = []
     
     start_point = 0
     #v_m = df2['macdhist'].values
@@ -180,21 +163,6 @@ def add_divergence(df,smoothing_price_pct = 0.03, smoothing_macd=5):
     v_c = df['kf'].values
     delta_m = smoothing_macd
     delta_c = smoothing_price_pct #150
-    '''
-    if len(mintab_close) > 0 and len(maxtab_close)>0 :
-        mn_c, mx_c = mintab_close[-1][1],maxtab_close[-1][1]
-        mnpos_c, mxpos_c = mintab_close[-1][0],maxtab_close[-1][0]
-    else:
-        mn_c, mx_c = Inf, -Inf
-        mnpos_m, mxpos_m=NaN, NaN
-        
-    if len(mintab_macd) > 0 and len(maxtab_macd)>0:
-        mn_m, mx_m = mintab_macd[-1][1],maxtab_macd[-1][1]
-        mnpos_m, mxpos_m = mintab_macd[-1][0],maxtab_macd[-1][0]   
-    else:
-        mn_m, mx_m = Inf, -Inf
-        mnpos_c, mxpos_c=NaN, NaN
-    '''
     mn_c, mx_c = Inf, -Inf
     mnpos_m, mxpos_m=NaN, NaN
     mn_m, mx_m = Inf, -Inf
@@ -356,8 +324,18 @@ def add_state(df_weekly, div_df):
         div_df['market_state']='Bearish'
     return div_df
 
-def add_volatility(df,div_df):
 
+# To add the rolling Volatility to the code
+def rolling_volatility(df, duration):
+    #duration = duration.split()
+    df['rolling_volatility']=0
+    rolling_volatility_period = int(144/int(duration))
+    roller = pd.Series.rolling(df['close'].pct_change(),rolling_volatility_period)
+    volList = roller.std(ddof=0)
+    df['rolling_volatility'] = volList
+    return df
+
+def add_volatility(df,div_df):
     div_df['volatility']=None
     mean = df['rolling_volatility'].mean()
     std = df['rolling_volatility'].std()
