@@ -17,8 +17,8 @@ def get_signals(token_list,duration):
     for i in range(len(token_list)):
         
         df, df_weekly = get_df(token_list[i])
-        for i in range(len(duration)):
-            curr_duration = duration[i]
+        for j in range(len(duration)):
+            curr_duration = duration[j]
             #print(curr_duration)
             curr_duration = curr_duration.split()
             df_new = resample_data(df, curr_duration[0],curr_duration[1])
@@ -27,7 +27,7 @@ def get_signals(token_list,duration):
             if (div_df is not None):
                 dict_div = {}
                 dict_div['token']=token_list[i]
-                dict_div['duration']=duration[i]
+                dict_div['duration']=duration[j]
                 dict_div['start']=div_df['start']
                 dict_div['end']=div_df['end']
                 dict_div['type']=div_df['type']
@@ -39,7 +39,7 @@ def get_signals(token_list,duration):
     return signals
 
 if __name__=="__main__":
-    token_list = ['BTC', 'ETH', 'XRP', 'LTC', 'BAB', 'BCH']
+    token_list = ['BTC'] #, 'ETH', 'XRP', 'LTC', 'BAB', 'BCH']
     duration_list = ['2 HOUR','4 HOUR','8 HOUR','12 HOUR']
     signals = get_signals(token_list,duration_list)
     print(signals)

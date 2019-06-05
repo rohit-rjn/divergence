@@ -9,54 +9,7 @@ import json
 import sys
 from numpy import NaN, Inf, arange, isscalar, asarray, array
 
-# For calculating peaks/lows in the data
-def peakdet(v, delta, x = None):
 
-    maxtab = []
-    mintab = []
-       
-    if x is None:
-        x = arange(len(v))
-    
-    v = asarray(v)
-    
-    if len(v) != len(x):
-        raise ValueError('Input vectors v and x must have same length')
-    
-    if not isscalar(delta):
-        raise ValueError('Input argument delta must be a scalar')
-    
-    if delta <= 0:
-        raise ValueError('Input argument delta must be positive')
-
-    mn, mx = Inf, -Inf
-    mnpos, mxpos = NaN, NaN
-    
-    lookformax = True
-    
-    for i in arange(len(v)):
-        this = v[i]
-        if this > mx:
-            mx = this
-            mxpos = x[i]
-        if this < mn:
-            mn = this
-            mnpos = x[i]
-        
-        if lookformax:
-            if this < mx-delta:
-                maxtab.append((mxpos, mx))
-                mn = this
-                mnpos = x[i]
-                lookformax = False
-        else:
-            if this > mn+delta:
-                mintab.append((mnpos, mn))
-                mx = this
-                mxpos = x[i]
-                lookformax = True
-
-    return array(maxtab), array(mintab)
 
 # Function to Add the MACD to DataFrame 
 def add_macd(df):
@@ -87,16 +40,6 @@ def add_kalman(df):
     df['kf']= state_means
     return df
 
-#Finding the Extrema's of MACD- This is legacy version 
-def extrema_macd(df, smoothing_factor=1):
-    maxtab_macd, mintab_macd = peakdet(df['macdhist'].values,smoothing_factor)  
-    return df, maxtab_macd, mintab_macd
-
-#Finding peaks/lows in Prices 
-def extrema_price(df, smoothing_factor=1):  
-    maxtab_close, mintab_close = peakdet(df['kf'],smoothing_factor)
-    return df, maxtab_close, mintab_close
-
 def rolling_volatility(df, duration):
     #duration = duration.split()
     df['rolling_volatility']=0
@@ -104,7 +47,6 @@ def rolling_volatility(df, duration):
     roller = pd.Series.rolling(df['close'].pct_change(),rolling_volatility_period)
     volList = roller.std(ddof=0)
     df['rolling_volatility'] = volList
-    
     return df
 
 # Code to Merge consecutive Divergences 
@@ -124,7 +66,7 @@ def merge(divergence_list):
     return divergence_merge
 
 # This code is to find the Minima's in MACD given the price's Minima
-def check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m):
+def check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m, flag=0):
     
     start= prev_local_minima[0]
     end= new_local_minima[0]
@@ -135,7 +77,7 @@ def check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m):
     x=0
     y=0
     for i in range(1,len(mintab_m)):
-        if(mintab_m[i-1][0] <= start and mintab_m[i][0] >= start):
+        if(mintab_m[i-1][0] <= start and mintab_m[i][0] >= start and flag==0):
             local_minimas_macd_list.append(mintab_m[i-1])
             
         if(mintab_m[i][0] > start and mintab_m[i][0]< end):
@@ -155,37 +97,8 @@ def check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m):
 
     return slope, intercept, r_value, p_value, std_err, j,k
 
-# This one different that previous as, as it doesn't look into pas
-def check_previous_minima_v1(prev_local_minima,new_local_minima, df, mintab_m):
-        
-    start= prev_local_minima[0]
-    end= new_local_minima[0]
-    local_minimas_macd = 0
-    local_minimas_macd_list = []
-    j=0
-    k=0
-    x=0
-    y=0
-    for i in range(1,len(mintab_m)):
- 
-        if(mintab_m[i][0] > start and mintab_m[i][0]< end):
 
-            local_minimas_macd_list.append(mintab_m[i])
-            if df['macdhist'].loc[mintab_m[i][0]] < 0 :
-                j+=1
-            elif df['macdhist'].loc[mintab_m[i][0]] > 0 :
-                k+=1
-    
-    local_minimas_macd_list= np.asarray(local_minimas_macd_list)
-
-    if(len(local_minimas_macd_list)==0):
-        return 0,0,0,0,0,0,0
-    x= local_minimas_macd_list[:,0]
-    y= local_minimas_macd_list[:,1]
-    slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
-    return slope, intercept, r_value, p_value, std_err, j,k
-
-def check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m):
+def check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m, flag=0):
     start= prev_local_maxima[0]
     end= new_local_maxima[0]
     local_maximas_macd = 0
@@ -196,7 +109,7 @@ def check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m):
     y=0
     for i in range(1,len(maxtab_m)):
         
-        if maxtab_m[i-1][0]<= start and maxtab_m[i][0] >= start:
+        if maxtab_m[i-1][0]<= start and maxtab_m[i][0] >= start and flag==0:
             local_maximas_macd_list.append(maxtab_m[i-1])
         if(maxtab_m[i][0] >= start and maxtab_m[i][0]<= end):
             local_maximas_macd_list.append(maxtab_m[i])
@@ -212,31 +125,6 @@ def check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m):
     slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
     return slope, intercept, r_value, p_value, std_err, j,k
 
-
-def check_previous_maxima_v1(prev_local_maxima,new_local_maxima, df, maxtab_m):
-    start= prev_local_maxima[0]
-    end= new_local_maxima[0]
-    local_maximas_macd = 0
-    local_maximas_macd_list = []
-    j=0
-    k=0
-    x=0
-    y=0
-    for i in range(1,len(maxtab_m)):
-        
-        if(maxtab_m[i][0] >= start and maxtab_m[i][0]<= end):
-            local_maximas_macd_list.append(maxtab_m[i])
-            if df['macdhist'].loc[maxtab_m[i][0]] > 0 :
-                j+=1
-            elif df['macdhist'].loc[maxtab_m[i][0]] < 0 :
-                k+=1
-    local_maximas_macd_list = np.asarray(local_maximas_macd_list)
-    if(len(local_maximas_macd_list)==0):
-        return 0,0,0,0,0,0,0
-    x= local_maximas_macd_list[:,0]
-    y= local_maximas_macd_list[:,1]
-    slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
-    return slope, intercept, r_value, p_value, std_err, j,k
 
 def signal_strength_cosine(df, divergence_list):
     #Step 1 Convert signal to Vectors
@@ -278,21 +166,21 @@ def signal_strength_cosine(df, divergence_list):
     if len(df_signal)>0:
         return df_signal.iloc[-1]
     else:
-
         return None
     
-def add_divergence(df2,df, mintab_close, maxtab_close, mintab_macd, maxtab_macd, smoothing_price_pct = 0.03, smoothing_macd=5):
-    mintab_c = mintab_close.tolist()
-    maxtab_c = maxtab_close.tolist()
-    mintab_m = mintab_macd.tolist()
-    maxtab_m = maxtab_macd.tolist()
+def add_divergence(df,smoothing_price_pct = 0.03, smoothing_macd=5):
+    mintab_c = []#mintab_close.tolist()
+    maxtab_c = []#maxtab_close.tolist()
+    mintab_m = []#mintab_macd.tolist()
+    maxtab_m = []#maxtab_macd.tolist()
     
-    start_point = 9
+    start_point = 0
     #v_m = df2['macdhist'].values
-    v_m = df2['macdhist'].values
-    v_c = df2['kf'].values
+    v_m = df['macdhist'].values
+    v_c = df['kf'].values
     delta_m = smoothing_macd
     delta_c = smoothing_price_pct #150
+    '''
     if len(mintab_close) > 0 and len(maxtab_close)>0 :
         mn_c, mx_c = mintab_close[-1][1],maxtab_close[-1][1]
         mnpos_c, mxpos_c = mintab_close[-1][0],maxtab_close[-1][0]
@@ -306,11 +194,17 @@ def add_divergence(df2,df, mintab_close, maxtab_close, mintab_macd, maxtab_macd,
     else:
         mn_m, mx_m = Inf, -Inf
         mnpos_c, mxpos_c=NaN, NaN
-    
+    '''
+    mn_c, mx_c = Inf, -Inf
+    mnpos_m, mxpos_m=NaN, NaN
+    mn_m, mx_m = Inf, -Inf
+    mnpos_c, mxpos_c=NaN, NaN
+
     divergence_list=[]
     lookformax_m = True
     lookformax_c = True
-    
+
+
     for i in range(len(v_m)):
         this_m = v_m[i]
         if this_m > mx_m:
@@ -355,17 +249,17 @@ def add_divergence(df2,df, mintab_close, maxtab_close, mintab_macd, maxtab_macd,
                 new_local_maxima= [mxpos_c, mx_c]
                 mn_c = this_c
                 if(prev_local_maxima[1] < new_local_maxima[1]):
-                    slope, intercept, r_value, p_value, std_err, j,k = check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m)
+                    slope, intercept, r_value, p_value, std_err, j,k = check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m, flag=0)
                     if std_err >4 and  slope > 0:
-                        slope, intercept, r_value, p_value, std_err, j, k = check_previous_maxima_v1(prev_local_maxima,new_local_maxima, df, maxtab_m)
+                        slope, intercept, r_value, p_value, std_err, j, k = check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m, flag=1)
                     #print(slope,std_err,prev_local_maxima[0],new_local_maxima[0],3)
                     if(slope < 0 and j > k and std_err < 4):
                         divergence_list.append([prev_local_maxima[0],new_local_maxima[0],3])
                         #print('\n')
                 if(prev_local_maxima[1] > new_local_maxima[1]):
-                    slope, intercept, r_value, p_value, std_err, j, k = check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m)
+                    slope, intercept, r_value, p_value, std_err, j, k = check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m, flag=0)
                     if std_err >4 and  slope < 0:
-                        slope, intercept, r_value, p_value, std_err, j, k = check_previous_maxima_v1(prev_local_maxima,new_local_maxima, df, maxtab_m)
+                        slope, intercept, r_value, p_value, std_err, j, k = check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m, flag=1)
                     #print(slope,std_err,prev_local_maxima[0],new_local_maxima[0],4)
                     if slope > 0 and std_err < 4 and j>k:
                         divergence_list.append([prev_local_maxima[0],new_local_maxima[0],4])
@@ -384,20 +278,20 @@ def add_divergence(df2,df, mintab_close, maxtab_close, mintab_macd, maxtab_macd,
                 new_local_minima= [mnpos_c, mn_c]
                 mx_c = this_c
                 if(prev_local_minima[1] > new_local_minima[1]):
-                    slope, intercept, r_value, p_value, std_err, j,k = check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m)
+                    slope, intercept, r_value, p_value, std_err, j,k = check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m, flag=0)
                     #slope = check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m)
                     
                     if std_err > 4 and slope < 0:
-                        slope, intercept, r_value, p_value, std_err, j,k = check_previous_minima_v1(prev_local_minima,new_local_minima, df, mintab_m)
+                        slope, intercept, r_value, p_value, std_err, j,k = check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m, flag=1)
                     #print(slope,std_err,prev_local_minima[0],new_local_minima[0],1)
                     if slope > 0 and std_err < 4 and j > k :
                         divergence_list.append([prev_local_minima[0],new_local_minima[0],1])
                         #print('\n')
                 
                 elif prev_local_minima[1] < new_local_minima[1]:
-                    slope, intercept, r_value, p_value, std_err, j, k = check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m)
+                    slope, intercept, r_value, p_value, std_err, j, k = check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m, flag=0)
                     if std_err > 4 and slope > 0:
-                        slope, intercept, r_value, p_value, std_err, j,k = check_previous_minima_v1(prev_local_minima,new_local_minima, df, mintab_m)
+                        slope, intercept, r_value, p_value, std_err, j,k = check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m, flag=1)
                     #print(slope,std_err,prev_local_minima[0],new_local_minima[0],2)
                     if slope < 0 and std_err < 4 and j>k :
                         divergence_list.append([prev_local_minima[0],new_local_minima[0],2])
@@ -405,7 +299,7 @@ def add_divergence(df2,df, mintab_close, maxtab_close, mintab_macd, maxtab_macd,
                         
                 mxpos_c = start_point+i #x[i]
                 lookformax_c = True
-    return df2,divergence_list, mintab_c, maxtab_c, mintab_m, maxtab_m
+    return df,divergence_list, mintab_c, maxtab_c, mintab_m, maxtab_m
 
 
 
@@ -429,10 +323,6 @@ def find_complete(df, divergence_list):
             
                 df['signal_complete_end'].loc[j]=1
     return df
-
-
-
-
 
 
 #Finding MACD and adding to df
@@ -487,14 +377,8 @@ def find_divergence(df, df_weekly, duration):
     df = add_macd(df)
     df = add_kalman(df)
     df = rolling_volatility(df,duration)
-    #print(df.tail())
-    df1 = df[0:10]
-    df2 = df[9:]
-    df1, maxtab_macd, mintab_macd = extrema_macd(df1,smoothing_factor=(0.001*df['close'].loc[1]))
-    df1, maxtab_close, mintab_close = extrema_price(df1, smoothing_factor=(0.01*df['close'].loc[1])) 
-    df2,divergence, mintab_c, maxtab_c, mintab_m, maxtab_m = add_divergence(df2,df, mintab_close, 
-                                                                        maxtab_close, mintab_macd, maxtab_macd, 
-                                                                        smoothing_price_pct=0.01, smoothing_macd=0.001)
+  
+    df,divergence, mintab_c, maxtab_c, mintab_m, maxtab_m = add_divergence(df,smoothing_price_pct=0.01, smoothing_macd=0.001)
     
     #print(divergence)
     div_df = {}
