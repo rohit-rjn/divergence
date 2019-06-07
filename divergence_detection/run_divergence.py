@@ -2,12 +2,12 @@ from divergence_signals import find_divergence
 from get_data import get_hourly, get_weekly, resample_data
 import json
 import datetime 
-
+import warnings
 def get_df(token):
     #duration = duration.split()
     df = get_hourly(token)
-    df_weekly = get_weekly(token)
-    df_weekly = resample_data(df_weekly, '1','WEEK')
+    df_daily = get_daily(token)
+    df_weekly = resample_data(df_daily, '1','WEEK')
     df_weekly = df_weekly.reset_index(level=None, drop=False, inplace=False, col_level=0)
 
     return df, df_weekly
@@ -15,10 +15,13 @@ def get_df(token):
 def get_signals(token_list,duration):
     signals =[]
     for i in range(len(token_list)):
-        
-        df, df_weekly = get_df(token_list[i])
+        try:                                                                                                                                         
+            df, df_weekly = get_df(token_list[i])
+        except:
+            message = 'DataFrame '+str(token_list[i])+' not found'
+            warnings.warn(message)
+            continue
 
-        
         for j in range(len(duration)):
             curr_duration = duration[j]
             #print(curr_duration)
@@ -41,7 +44,7 @@ def get_signals(token_list,duration):
     return signals
 
 if __name__=="__main__":
-    token_list = ['BTC'] #, 'ETH', 'XRP', 'LTC', 'BAB', 'BCH']
+    token_list = ['BTC', 'ETH', 'XRP', 'LTC', 'BAB', 'BCH', 'XPP']
     duration_list = ['2 HOUR','4 HOUR','8 HOUR','12 HOUR']
     signals = get_signals(token_list,duration_list)
     print(signals)

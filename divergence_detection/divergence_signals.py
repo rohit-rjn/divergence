@@ -6,9 +6,8 @@ from scipy import stats, spatial
 from pandas import Series
 from pykalman import KalmanFilter
 import json
-import sys
 from numpy import NaN, Inf, arange, isscalar, asarray, array
-
+import warnings
 
 
 # Function to Add the MACD to DataFrame 
@@ -116,7 +115,7 @@ def signal_strength_cosine(df, divergence_list):
     start = []
     end = []
     signal_type = []
-    
+     
     for i in range(0,len(divergence_list)):
         y_macd = df['macdhist'].loc[divergence_list[i][1]] - df['macdhist'].loc[divergence_list[i][0]]
         x_macd = divergence_list[i][1] - divergence_list[i][0]
@@ -138,9 +137,11 @@ def signal_strength_cosine(df, divergence_list):
 
     signal_cosine = []
     for i in range(0, len(vector_macd)):
+
         quality = spatial.distance.cosine(vector_macd[i],vector_price[i])
         signal_cosine.append(quality)
-    
+
+
     df_signal = pd.DataFrame()
     df_signal['start']= start
     df_signal['end'] = end
@@ -157,7 +158,7 @@ def add_divergence(df,smoothing_price_pct = 0.02, smoothing_macd=0.001):
     mintab_m = []
     maxtab_m = []
     
-    start_point = 0
+    
     #v_m = df2['macdhist'].values
     v_m = df['macdhist'].values
     v_c = df['kf'].values
@@ -177,22 +178,22 @@ def add_divergence(df,smoothing_price_pct = 0.02, smoothing_macd=0.001):
         this_m = v_m[i]
         if this_m > mx_m:
             mx_m = this_m
-            mxpos_m = start_point+i
+            mxpos_m = i
         if this_m < mn_m:
             mn_m = this_m
-            mnpos_m = start_point+i
+            mnpos_m = i
     
         if lookformax_m:
             if this_m < mx_m-(delta_m*mx_c):
                 maxtab_m.append((mxpos_m, mx_m))
                 mn_m = this_m
-                mnpos_m = start_point+i #x[i]
+                mnpos_m = i #x[i]
                 lookformax_m = False
         else:
             if this_m > mn_m+(delta_m*mn_c):
                 mintab_m.append((mnpos_m, mn_m))
                 mx_m = this_m
-                mxpos_m = start_point+i #x[i]
+                mxpos_m = i #x[i]
                 lookformax_m = True
 
     #print(v[i],mx,mn)
@@ -200,10 +201,10 @@ def add_divergence(df,smoothing_price_pct = 0.02, smoothing_macd=0.001):
         this_c = v_c[i]
         if this_c > mx_c:
             mx_c = this_c
-            mxpos_c = start_point+i
+            mxpos_c = i
         if this_c < mn_c:
             mn_c = this_c
-            mnpos_c = start_point+i
+            mnpos_c = i
     
         if lookformax_c:
             if this_c < mx_c-(delta_c*mx_c):    
@@ -233,7 +234,7 @@ def add_divergence(df,smoothing_price_pct = 0.02, smoothing_macd=0.001):
                         divergence_list.append([prev_local_maxima[0],new_local_maxima[0],4])
                         #print('\n')
                         
-                mnpos_c = start_point+i #x[i]
+                mnpos_c = i #x[i]
                 lookformax_c = False
         else:
             if this_c > mn_c+(delta_c*mn_c):
@@ -265,7 +266,7 @@ def add_divergence(df,smoothing_price_pct = 0.02, smoothing_macd=0.001):
                         divergence_list.append([prev_local_minima[0],new_local_minima[0],2])
                         #print('\n')
                         
-                mxpos_c = start_point+i #x[i]
+                mxpos_c = i #x[i]
                 lookformax_c = True
     return df,divergence_list, mintab_c, maxtab_c, mintab_m, maxtab_m
 
@@ -335,6 +336,7 @@ def rolling_volatility(df, duration):
     df['rolling_volatility'] = volList
     return df
 
+# Adding Volatility metric to the code
 def add_volatility(df,div_df):
     div_df['volatility']=None
     mean = df['rolling_volatility'].mean()
@@ -350,12 +352,12 @@ def add_volatility(df,div_df):
 
 def find_divergence(df, df_weekly, duration):
     #duration= duration.split()
-
+                                                                                                                                                           
     df = df.reset_index(level=None, drop=False, inplace=False, col_level=0)
     df = add_macd(df)
     df = add_kalman(df)
     df = rolling_volatility(df,duration)
-  
+    df.fillna(0)
     df,divergence, mintab_c, maxtab_c, mintab_m, maxtab_m = add_divergence(df,smoothing_price_pct=0.01, smoothing_macd=0.001)
     
     #print(divergence)

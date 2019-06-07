@@ -3,7 +3,7 @@ import requests
 import datetime as dt
 import pandas as pd
 
-api_key = "324a4ca6b1280cc630713b36f70a1bbf48b14c0d0cff5b2daae3b28f5688cdb7"
+api_key = "59af9654fde15836d6274c389825375fb3dabd7c33552e0f6dd60d2523fdbe55"
 
 tf_mapper = {'MIN':'T','HOUR':'H','DAY':'D','WEEK':'W','MONTH':'M'}
 
@@ -98,8 +98,8 @@ def get_hourly(symbol, market="USD"):
     else:
         raise ValueError(data["Message"])
 
-def get_weekly(symbol, market="USD"):
-    params = {'fsym': symbol,
+def get_daily(symbol, market="USD"):
+    params = {'fsym': 'ETH',
               'tsym': market,
               'limit': 1000,
               'api_key': api_key}
