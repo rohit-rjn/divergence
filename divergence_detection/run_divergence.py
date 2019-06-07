@@ -48,9 +48,7 @@ def get_signals(token_list,duration):
     signals_small = {}
     for i in range(len(duration)):
         signals_small[duration[i]]=hourly_signal[i]
-    json_string=json.dumps(signals_small, default=str)
-
-    return json_string
+    return(signals_small)
 
 if __name__=="__main__":
     token_list = ['BTC', 'ETH', 'XRP', 'LTC', 'BAB', 'BCH', 'XPP']
