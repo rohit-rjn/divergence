@@ -1,5 +1,5 @@
 from divergence_signals import find_divergence
-from get_data import get_hourly, get_weekly, resample_data
+from get_data import get_hourly, get_daily, resample_data
 import json
 import datetime 
 import warnings
@@ -14,6 +14,8 @@ def get_df(token):
 
 def get_signals(token_list,duration):
     signals =[]
+    hourly_signal = [[] for _ in range(len(duration))]
+    #hourly_signal= [hourly_signal]*len(duration)
     for i in range(len(token_list)):
         try:                                                                                                                                         
             df, df_weekly = get_df(token_list[i])
@@ -22,9 +24,11 @@ def get_signals(token_list,duration):
             warnings.warn(message)
             continue
 
+        
         for j in range(len(duration)):
             curr_duration = duration[j]
             #print(curr_duration)
+            
             curr_duration = curr_duration.split()
             df_new = resample_data(df, curr_duration[0],curr_duration[1])
             df_new = df_new.reset_index(level=None, drop=False, inplace=False, col_level=0)
@@ -39,9 +43,14 @@ def get_signals(token_list,duration):
                 dict_div['cosine']=div_df['cosine']
                 dict_div['market_state']=div_df['market_state']
                 dict_div['volatility']=div_df['volatility']
-                json_string=json.dumps(dict_div, default=str)
-                signals.append(json_string)
-    return signals
+                hourly_signal[j].append(dict_div)
+    signals_small = {}
+    #print(hourly_signal[0])
+    for i in range(len(duration)):
+        signals_small[duration[i]]=hourly_signal[i]
+    json_string=json.dumps(signals_small, default=str)
+    
+    return json_string
 
 if __name__=="__main__":
     token_list = ['BTC', 'ETH', 'XRP', 'LTC', 'BAB', 'BCH', 'XPP']
