@@ -52,60 +52,7 @@ def merge(divergence_list):
     return divergence_merge
 
 # This code is to find the Minima's in MACD given the price's Minima
-def check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m, flag=0):
-    
-    start= prev_local_minima[0]
-    end= new_local_minima[0]
-    local_minimas_macd = 0
-    local_minimas_macd_list = []
-    j=0
-    k=0
-    for i in range(1,len(mintab_m)):
-        if(mintab_m[i-1][0] <= start and mintab_m[i][0] >= start and flag==0):
-            local_minimas_macd_list.append(mintab_m[i-1])
-            
-        if(mintab_m[i][0] > start and mintab_m[i][0]< end):
 
-            local_minimas_macd_list.append(mintab_m[i])
-            if df['macdhist'].loc[mintab_m[i][0]] < 0 :
-                j+=1
-            elif df['macdhist'].loc[mintab_m[i][0]] > 0 :
-                k+=1
-    
-    local_minimas_macd_list= np.asarray(local_minimas_macd_list)
-    if(len(local_minimas_macd_list)==0):
-        return 0,0,0,0,0,0,0
-    x= local_minimas_macd_list[:,0]
-    y= local_minimas_macd_list[:,1]
-    slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
-
-    return slope, intercept, r_value, p_value, std_err, j,k
-
-
-def check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m, flag=0):
-    start= prev_local_maxima[0]
-    end= new_local_maxima[0]
-    local_maximas_macd = 0
-    local_maximas_macd_list = []
-    j=0
-    k=0
-    for i in range(1,len(maxtab_m)):
-        
-        if maxtab_m[i-1][0]<= start and maxtab_m[i][0] >= start and flag==0:
-            local_maximas_macd_list.append(maxtab_m[i-1])
-        if(maxtab_m[i][0] >= start and maxtab_m[i][0]<= end):
-            local_maximas_macd_list.append(maxtab_m[i])
-            if df['macdhist'].loc[maxtab_m[i][0]] > 0 :
-                j+=1
-            elif df['macdhist'].loc[maxtab_m[i][0]] < 0 :
-                k+=1
-    local_maximas_macd_list = np.asarray(local_maximas_macd_list)
-    if(len(local_maximas_macd_list)==0):
-        return 0,0,0,0,0,0,0
-    x= local_maximas_macd_list[:,0]
-    y= local_maximas_macd_list[:,1]
-    slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
-    return slope, intercept, r_value, p_value, std_err, j,k
 
 
 def signal_strength_cosine(df, divergence_list):
@@ -139,6 +86,7 @@ def signal_strength_cosine(df, divergence_list):
     for i in range(0, len(vector_macd)):
 
         quality = spatial.distance.cosine(vector_macd[i],vector_price[i])
+        
         signal_cosine.append(quality)
 
 
@@ -152,29 +100,36 @@ def signal_strength_cosine(df, divergence_list):
     else:
         return None
     
-def add_divergence(df,smoothing_price_pct = 0.02, smoothing_macd=0.001):
+
+def add_divergence_macd(df,smoothing_price_pct=0.02, smoothing_macd=0.001):
     mintab_c = []
     maxtab_c = []
     mintab_m = []
     maxtab_m = []
-    
+    maxtab_p = []
+    mintab_p = []
     
     #v_m = df2['macdhist'].values
     v_m = df['macdhist'].values
     v_c = df['kf'].values
+    v_p = df['close'].values
     delta_m = smoothing_macd
     delta_c = smoothing_price_pct #150
     mn_c, mx_c = Inf, -Inf
     mnpos_m, mxpos_m=NaN, NaN
     mn_m, mx_m = Inf, -Inf
     mnpos_c, mxpos_c=NaN, NaN
-
+        
+    mn_p, mx_p = Inf, -Inf
+    mnpos_p, mxpos_p=NaN, NaN
+    
     divergence_list=[]
     lookformax_m = True
     lookformax_c = True
 
 
-    for i in range(len(v_m)):
+    for i in range(10,len(v_m)):
+    
         this_m = v_m[i]
         if this_m > mx_m:
             mx_m = this_m
@@ -182,94 +137,51 @@ def add_divergence(df,smoothing_price_pct = 0.02, smoothing_macd=0.001):
         if this_m < mn_m:
             mn_m = this_m
             mnpos_m = i
-    
+        
+        # For bear Div, and Hidden Bear Div
         if lookformax_m:
-            if this_m < mx_m-(delta_m*mx_c):
+            if this_m < mx_m-(delta_m*mx_m) and this_m <0 :    
+            
+                if len(maxtab_m)>0:
+                    prev_local_maxima= maxtab_m[-1]
+                else:
+                    prev_local_maxima = [0, -Inf]
+                #if(mx_c )
                 maxtab_m.append((mxpos_m, mx_m))
+                new_local_maxima= [mxpos_m, mx_m]
                 mn_m = this_m
+                
+                # For Bear Div - MACD making lower high and price making higher high
+                if(prev_local_maxima[1] > new_local_maxima[1]):
+                    if df['close'].iloc[int(prev_local_maxima[0])] < df['close'].iloc[int(new_local_maxima[0])]:
+                        divergence_list.append([prev_local_maxima[0],new_local_maxima[0],3])
+                # Hidden Bear - MACD making higher high, price making lower high
+                if(prev_local_maxima[1] < new_local_maxima[1]):
+                    if df['close'].iloc[int(prev_local_maxima[0])] > df['close'].iloc[int(new_local_maxima[0])]:
+                        divergence_list.append([prev_local_maxima[0],new_local_maxima[0],4])
                 mnpos_m = i #x[i]
                 lookformax_m = False
         else:
-            if this_m > mn_m+(delta_m*mn_c):
+            # Bull Divergence 
+            if this_m > mn_m+(delta_m*mn_m) and this_m > 0:
+                if len(mintab_m) > 0:
+                    prev_local_minima = mintab_m[-1]
+                else:
+                    prev_local_minima= [0, Inf]
                 mintab_m.append((mnpos_m, mn_m))
+                new_local_minima= [mnpos_m, mn_m]
                 mx_m = this_m
+                # Bull Div- MACD lower low, Price Higher Low
+                if(prev_local_minima[1] > new_local_minima[1]):
+                    if df['close'].iloc[int(prev_local_minima[0])] < df['close'].iloc[int(new_local_minima[0])]:
+                        divergence_list.append([prev_local_minima[0],new_local_minima[0],1])
+                # Hidden Bull Div- Macd higher low, price lower low
+                elif prev_local_minima[1] > new_local_minima[1]:
+                    if df['close'].iloc[int(prev_local_minima[0])] < df['close'].iloc[int(new_local_minima[0])]:
+                        divergence_list.append([prev_local_minima[0],new_local_minima[0],2])
                 mxpos_m = i #x[i]
                 lookformax_m = True
-
-    #print(v[i],mx,mn)
-    
-        this_c = v_c[i]
-        if this_c > mx_c:
-            mx_c = this_c
-            mxpos_c = i
-        if this_c < mn_c:
-            mn_c = this_c
-            mnpos_c = i
-    
-        if lookformax_c:
-            if this_c < mx_c-(delta_c*mx_c):    
-            #if this_c < mx_c - df['rolling_volatility'].loc[i]:
-                if len(maxtab_c)>0:
-                    prev_local_maxima= maxtab_c[-1]
-                else:
-                    prev_local_maxima = [NaN, -Inf]
-                #if(mx_c )
-                maxtab_c.append((mxpos_c, mx_c))
-                new_local_maxima= [mxpos_c, mx_c]
-                mn_c = this_c
-                if(prev_local_maxima[1] < new_local_maxima[1]):
-                    slope, intercept, r_value, p_value, std_err, j,k = check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m, flag=0)
-                    if std_err >4 and  slope > 0:
-                        slope, intercept, r_value, p_value, std_err, j, k = check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m, flag=1)
-                    #print(slope,std_err,prev_local_maxima[0],new_local_maxima[0],3)
-                    if(slope < 0 and j > k and std_err < 4):
-                        divergence_list.append([prev_local_maxima[0],new_local_maxima[0],3])
-                        #print('\n')
-                if(prev_local_maxima[1] > new_local_maxima[1]):
-                    slope, intercept, r_value, p_value, std_err, j, k = check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m, flag=0)
-                    if std_err >4 and  slope < 0:
-                        slope, intercept, r_value, p_value, std_err, j, k = check_previous_maxima(prev_local_maxima,new_local_maxima, df, maxtab_m, flag=1)
-                    #print(slope,std_err,prev_local_maxima[0],new_local_maxima[0],4)
-                    if slope > 0 and std_err < 4 and j>k:
-                        divergence_list.append([prev_local_maxima[0],new_local_maxima[0],4])
-                        #print('\n')
-                        
-                mnpos_c = i #x[i]
-                lookformax_c = False
-        else:
-            if this_c > mn_c+(delta_c*mn_c):
-            #if this_c > mn_c + df['rolling_volatility'].loc[i]:
-                if len(mintab_c) > 0:
-                    prev_local_minima = mintab_c[-1]
-                else:
-                    prev_local_minima= [NaN, Inf]
-                mintab_c.append((mnpos_c, mn_c))
-                new_local_minima= [mnpos_c, mn_c]
-                mx_c = this_c
-                if(prev_local_minima[1] > new_local_minima[1]):
-                    slope, intercept, r_value, p_value, std_err, j,k = check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m, flag=0)
-                    #slope = check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m)
-                    
-                    if std_err > 4 and slope < 0:
-                        slope, intercept, r_value, p_value, std_err, j,k = check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m, flag=1)
-                    #print(slope,std_err,prev_local_minima[0],new_local_minima[0],1)
-                    if slope > 0 and std_err < 4 and j > k :
-                        divergence_list.append([prev_local_minima[0],new_local_minima[0],1])
-                        #print('\n')
-                
-                elif prev_local_minima[1] < new_local_minima[1]:
-                    slope, intercept, r_value, p_value, std_err, j, k = check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m, flag=0)
-                    if std_err > 4 and slope > 0:
-                        slope, intercept, r_value, p_value, std_err, j,k = check_previous_minima(prev_local_minima,new_local_minima, df, mintab_m, flag=1)
-                    #print(slope,std_err,prev_local_minima[0],new_local_minima[0],2)
-                    if slope < 0 and std_err < 4 and j>k :
-                        divergence_list.append([prev_local_minima[0],new_local_minima[0],2])
-                        #print('\n')
-                        
-                mxpos_c = i #x[i]
-                lookformax_c = True
-    return df,divergence_list, mintab_c, maxtab_c, mintab_m, maxtab_m
-
+    return df,divergence_list, mintab_m, maxtab_m
 
 
 def find_complete(df, divergence_list):
@@ -357,8 +269,8 @@ def find_divergence(df, df_weekly, duration):
     df = add_macd(df)
     df = add_kalman(df)
     df = rolling_volatility(df,duration)
-    df.fillna(0)
-    df,divergence, mintab_c, maxtab_c, mintab_m, maxtab_m = add_divergence(df,smoothing_price_pct=0.01, smoothing_macd=0.001)
+    df = df.fillna(0)
+    df,divergence, mintab_m, maxtab_m = add_divergence_macd(df,smoothing_price_pct=0.01, smoothing_macd=0.001)
     
     #print(divergence)
     div_df = {}

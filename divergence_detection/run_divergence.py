@@ -1,5 +1,5 @@
-from divergence_signals import find_divergence
-from get_data import get_hourly, get_daily, resample_data
+from divergences import find_divergence
+from candles import get_hourly, get_daily, resample_data
 import json
 import datetime 
 import warnings
