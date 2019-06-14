@@ -176,8 +176,8 @@ def add_divergence_macd(df,smoothing_price_pct=0.02, smoothing_macd=0.001):
                     if df['close'].iloc[int(prev_local_minima[0])] < df['close'].iloc[int(new_local_minima[0])]:
                         divergence_list.append([prev_local_minima[0],new_local_minima[0],1])
                 # Hidden Bull Div- Macd higher low, price lower low
-                elif prev_local_minima[1] > new_local_minima[1]:
-                    if df['close'].iloc[int(prev_local_minima[0])] < df['close'].iloc[int(new_local_minima[0])]:
+                elif prev_local_minima[1] < new_local_minima[1]:
+                    if df['close'].iloc[int(prev_local_minima[0])] > df['close'].iloc[int(new_local_minima[0])]:
                         divergence_list.append([prev_local_minima[0],new_local_minima[0],2])
                 mxpos_m = i #x[i]
                 lookformax_m = True
