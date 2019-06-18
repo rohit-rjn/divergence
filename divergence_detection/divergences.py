@@ -113,7 +113,7 @@ def add_divergence_macd(df,smoothing_price_pct=0.02, smoothing_macd=0.001):
     v_m = df['macdhist'].values
     v_c = df['kf'].values
     v_p = df['close'].values
-    delta_m = smoothing_macd
+    delta_m = smoothing_macd*df['close'].iloc[0]
     delta_c = smoothing_price_pct #150
     mn_c, mx_c = Inf, -Inf
     mnpos_m, mxpos_m=NaN, NaN
@@ -140,7 +140,7 @@ def add_divergence_macd(df,smoothing_price_pct=0.02, smoothing_macd=0.001):
         
         # For bear Div, and Hidden Bear Div
         if lookformax_m:
-            if this_m < mx_m-(delta_m*mx_m) and this_m <0 :    
+            if this_m < mx_m-(delta_m):    
             
                 if len(maxtab_m)>0:
                     prev_local_maxima= maxtab_m[-1]
@@ -163,7 +163,7 @@ def add_divergence_macd(df,smoothing_price_pct=0.02, smoothing_macd=0.001):
                 lookformax_m = False
         else:
             # Bull Divergence 
-            if this_m > mn_m+(delta_m*mn_m) and this_m > 0:
+            if this_m > mn_m+(delta_m):
                 if len(mintab_m) > 0:
                     prev_local_minima = mintab_m[-1]
                 else:
