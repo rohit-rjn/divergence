@@ -35,6 +35,8 @@ def get_signals(tokens, durations):
                         dict_div['end']          = div_df['end'].strftime("%Y-%m-%d %H:%M")
                         dict_div['type']         = div_df['type']
                         dict_div['cosine']       = round(div_df['cosine'], 3)
+                        dict_div['stochrsi_div'] = div_df['stochrsi_div']
+                        dict_div['mfi_div']      = div_df['mfi_div']
                         dict_div['market_state'] = div_df['market_state']
                         dict_div['volatility']   = div_df['volatility']
                         signals.append(dict_div)
