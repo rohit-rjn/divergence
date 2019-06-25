@@ -29,16 +29,16 @@ def get_signals(token_list,duration):
                     div_df = find_divergence(df_new, df_weekly, curr_duration[0])
                     if (div_df is not None):
                         dict_div = {}
-                        dict_div['token']=token_list[i]
-                        dict_div['duration']=duration[j]
-                        dict_div['start']=div_df['start']
-                        dict_div['end']=div_df['end']
-                        dict_div['type']=div_df['type']
-                        dict_div['cosine']=div_df['cosine']
-                        dict_div['stochrsi_div']= div_df['stochrsi_div']
-                        dict_div['mfi_div'] = div_df['mfi_div']
-                        dict_div['market_state']=div_df['market_state']
-                        dict_div['volatility']=div_df['volatility']
+                        dict_div['token']        = token_list[i]
+                        dict_div['duration']     = duration[j]
+                        dict_div['start']        = div_df['start'].strftime("%Y-%m-%d %H:%M")
+                        dict_div['end']          = div_df['end'].strftime("%Y-%m-%d %H:%M")
+                        dict_div['type']         = div_df['type']
+                        dict_div['cosine']       = div_df['cosine']
+                        dict_div['stochrsi_div'] = div_df['stochrsi_div']
+                        dict_div['mfi_div']      = div_df['mfi_div']
+                        dict_div['market_state'] = div_df['market_state']
+                        dict_div['volatility']   = div_df['volatility']
                         hourly_signal[j].append(dict_div)
                 except Exception as e:
                     print(e)
@@ -53,7 +53,7 @@ def get_signals(token_list,duration):
     return(signals_small)
 
 if __name__=="__main__":
-    token_list = ['BTC', 'ETH', 'XRP', 'LTC', 'BAB', 'BCH', 'XPP']
+    token_list = ['LTC'] #, 'ETH', 'XRP', 'LTC', 'BAB', 'BCH', 'XPP']
     duration_list = ['2 HOUR','4 HOUR','8 HOUR','12 HOUR']
     signals = get_signals(token_list,duration_list)
     print(signals)
