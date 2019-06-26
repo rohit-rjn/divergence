@@ -263,7 +263,7 @@ def add_divergence(df):
     div_i = []
     div_o = []
     #print(start, end, maxtab_m2[-1][0],maxtab_m1[-1][0])
-    if maxtab_m2[-1][0] > (end-3):
+    if maxtab_m2[-1][0] > (end-4):
         #print(maxtab_m2[-1][0])
         if maxtab_m1[-1][0]!=maxtab_m2[-1][0]:
             curr = maxtab_m2[-1]
@@ -307,7 +307,7 @@ def add_divergence(df):
                     div_i = (prev_mfi[0],curr_mfi[0],4)
     
     #print(start, end, mintab_m2[-1][0],mintab_m1[-1][0])                  
-    if mintab_m2[-1][0] > (end-3):
+    if mintab_m2[-1][0] > (end-4):
         if mintab_m1[-1][0]!=mintab_m2[-1][0]:
             curr = mintab_m2[-1]
             prev = mintab_m1[-1]
