@@ -53,18 +53,17 @@ def add_stochrsi(df):
     df['fastd']=fastd
     return df
 
-# Add Kalman Filter to the the DataFrame 
-def add_kalman(df):
-    # Construct a Kalman filter
-    kf = KalmanFilter(transition_matrices = [1],
-                  observation_matrices = [1],
-                  initial_state_mean = 0,
-                  initial_state_covariance = 1,
-                  observation_covariance=1,
-                  transition_covariance=.01)
-    state_means, _ = kf.filter(df['close'].values)
-    state_means = pd.Series(state_means.flatten(), index=df['close'].index)
-    df['kf']= state_means
+#Add Obv 
+def add_obv(df):
+    obv = talib.OBV(df['close'].values, df['volume'].values)
+    df['obv']=obv
+    return df
+
+# Obv Oscillator 
+def add_obv_osc(df):
+    #obv = df['obv']
+    obv_osc = df['obv'] - df['obv'].ewm(span=20,min_periods=0,adjust=False,ignore_na=False).mean()
+    df['obv_osc']=obv_osc
     return df
 
 # Code for finding Extremas
@@ -244,27 +243,31 @@ def check_maxima(prev_local_maxima,new_local_maxima, df, maxtab, flag=0):
             #print(local_maxima_mfi)
     return local_maxima, current_maxima
 
+
 def add_divergence(df):
+    
     start = 0
     end = len(df)
     delta_m = 0.001*df['close'].iloc[1]
     maxtab_m1,mintab_m1 = peakdet(df['macdhist'].values, delta_m,start, x = None)
     delta_m2= 0.0001*df['close'].iloc[1]
     maxtab_m2,mintab_m2 = peakdet(df['macdhist'].values, delta_m2,start, x = None)
-    delta_r = 3
-    maxtab_r,mintab_r = peakdet(df['fastk'].values, delta_r,start, x = None)
+    delta_sr = 3
+    maxtab_sr,mintab_sr = peakdet(df['fastk'].values, delta_sr,start, x = None)
+    delta_r = 2
+    maxtab_r,mintab_r = peakdet(df['rsi'].values, delta_sr,start, x = None)
     delta_i = 1
     maxtab_i,mintab_i = peakdet(df['mfi'].values, delta_i,start, x = None)
-    #delta_o = 0.01*10000000
-    #maxtab_o,mintab_o = peakdet(df['obv_osc'].values, delta_o,start, x = None)
+    delta_o = 0.01*df['volume'].iloc[1]
+    maxtab_o,mintab_o = peakdet(df['obv_osc'].values, delta_o,start, x = None)
     
     div_m = []
+    div_sr = []
     div_r = []
     div_i = []
     div_o = []
     #print(start, end, maxtab_m2[-1][0],maxtab_m1[-1][0])
-    if maxtab_m2[-1][0] > (end-4):
-        #print(maxtab_m2[-1][0])
+    if maxtab_m2[-1][0] > end-3 :
         if maxtab_m1[-1][0]!=maxtab_m2[-1][0]:
             curr = maxtab_m2[-1]
             prev = maxtab_m1[-1]
@@ -272,23 +275,41 @@ def add_divergence(df):
             curr = maxtab_m2[-1]
             prev = maxtab_m1[-2]
         # Regular bear Div - MACD lower high and Price higher high
-        #print('-------------------',curr,prev)
+        #print(curr[1],prev)
         if prev[1] > curr[1]:
-            if df['close'].iloc[int(prev[0])] < df['close'].iloc[int(curr[0])]:
+            df_close_range_low = df['close'].iloc[int(prev[0])] + 0.01*df['close'].iloc[int(prev[0])]
+            df_close_range_high = df['close'].iloc[int(prev[0])] - 0.01*df['close'].iloc[int(prev[0])]
+            if  df_close_range_low < df['close'].iloc[int(curr[0])] < df_close_range_high:
+                div_m = (prev[0],curr[0],5)
+            
+            elif df['close'].iloc[int(prev[0])] < df['close'].iloc[int(curr[0])]:
                 div_m = (prev[0],curr[0],3)
 
+        
         prev_rsi, curr_rsi = check_maxima(prev,curr, df, maxtab_r, flag=0)
         if len(prev_rsi)>0 and len(curr_rsi)>0:
             if prev_rsi[1] > curr_rsi[1]:
                 if df['close'].iloc[int(prev_rsi[0])] < df['close'].iloc[int(curr_rsi[0])]:
                     div_r = (prev_rsi[0],curr_rsi[0],3)
-            
+                    
+        prev_srsi, curr_srsi = check_maxima(prev,curr, df, maxtab_sr, flag=0)
+        if len(prev_srsi)>0 and len(curr_srsi)>0:
+            if prev_srsi[1] > curr_srsi[1]:
+                if df['close'].iloc[int(prev_srsi[0])] < df['close'].iloc[int(curr_srsi[0])]:
+                    div_sr = (prev_srsi[0],curr_srsi[0],3)
+                    #df['end'].iloc[end]=6
         prev_mfi, curr_mfi = check_maxima(prev,curr, df, maxtab_i, flag=0)
         if len(prev_mfi)>0 and len(curr_mfi)>0:
             if prev_mfi[1] > curr_mfi[1]:
                 if df['close'].iloc[int(prev_mfi[0])] < df['close'].iloc[int(curr_mfi[0])]:
                     div_i = (prev_mfi[0],curr_mfi[0],3)
         
+        prev_obv, curr_obv = check_maxima(prev,curr, df, maxtab_o, flag=0)
+        if len(prev_obv)>0 and len(curr_obv)>0:
+            if prev_obv[1] > curr_obv[1]:
+                if df['close'].iloc[int(prev_obv[0])] < df['close'].iloc[int(curr_obv[0])]:
+                    div_o = (prev_obv[0],curr_obv[0],3)
+                    
         #Hidden Bear Div - MACD higher high, and Price Lower high
         if prev[1] < curr[1]:
             if df['close'].iloc[int(prev[0])] > df['close'].iloc[int(curr[0])]:
@@ -299,15 +320,26 @@ def add_divergence(df):
             if prev_rsi[1] < curr_rsi[1]:
                 if df['close'].iloc[int(prev_rsi[0])] > df['close'].iloc[int(curr_rsi[0])]:
                     div_r = (prev_rsi[0],curr_rsi[0],4)
-            
+        
+        prev_srsi, curr_srsi = check_maxima(prev,curr, df, maxtab_sr, flag=0)
+        if len(prev_srsi)>0 and len(curr_srsi)>0:
+            if prev_srsi[1] < curr_srsi[1]:
+                if df['close'].iloc[int(prev_srsi[0])] > df['close'].iloc[int(curr_srsi[0])]:
+                    div_sr = (prev_srsi[0],curr_srsi[0],4)
+
         prev_mfi, curr_mfi = check_maxima(prev,curr, df, maxtab_i, flag=0)
         if len(prev_mfi)>0 and len(curr_mfi)>0:
             if prev_mfi[1] < curr_mfi[1]:
                 if df['close'].iloc[int(prev_mfi[0])] > df['close'].iloc[int(curr_mfi[0])]:
                     div_i = (prev_mfi[0],curr_mfi[0],4)
+        
+        prev_obv, curr_obv = check_maxima(prev,curr, df, maxtab_o, flag=0)
+        if len(prev_obv)>0 and len(curr_obv)>0:
+            if prev_obv[1] < curr_obv[1]:
+                if df['close'].iloc[int(prev_obv[0])] < df['close'].iloc[int(curr_obv[0])]:
+                    div_o = (prev_obv[0],curr_obv[0],4)
     
-    #print(start, end, mintab_m2[-1][0],mintab_m1[-1][0])                  
-    if mintab_m2[-1][0] > (end-4):
+    if mintab_m2[-1][0] >  end-4:
         if mintab_m1[-1][0]!=mintab_m2[-1][0]:
             curr = mintab_m2[-1]
             prev = mintab_m1[-1]
@@ -315,50 +347,76 @@ def add_divergence(df):
             curr = mintab_m2[-1]
             prev = mintab_m1[-2]
         # Regular bull Div - MACD higher low, and price lower low
-        #print('-------------------')
         if prev[1] < curr[1]:
-            if df['close'].iloc[int(prev[0])] > df['close'].iloc[int(curr[0])]:
+            df_close_range_low = df['close'].iloc[int(prev[0])] + 0.01*df['close'].iloc[int(prev[0])]
+            df_close_range_high = df['close'].iloc[int(prev[0])] - 0.01*df['close'].iloc[int(prev[0])]
+            if  df_close_range_low > df['close'].iloc[int(curr[0])] < df_close_range_high:
+                div_m = (prev[0],curr[0],6)
+            
+            elif df['close'].iloc[int(prev[0])] > df['close'].iloc[int(curr[0])]:
                 div_m = (prev[0],curr[0],1)
 
+                
         prev_rsi, curr_rsi = check_minima(prev,curr, df, mintab_r, flag=0)
         if len(prev_rsi)>0 and len(curr_rsi)>0:
             if prev_rsi[1] < curr_rsi[1]:
                 if df['close'].iloc[int(prev_rsi[0])] > df['close'].iloc[int(curr_rsi[0])]:
-                    div_r = (prev_rsi[0],curr_rsi[0],1)
-            
+                    div_r = (prev_rsi[0],curr_rsi[0],1) 
+        prev_srsi, curr_srsi = check_minima(prev,curr, df, mintab_sr, flag=0)
+        if len(prev_srsi)>0 and len(curr_srsi)>0:
+            if prev_srsi[1] < curr_srsi[1]:
+                if df['close'].iloc[int(prev_srsi[0])] > df['close'].iloc[int(curr_srsi[0])]:
+                    div_sr = (prev_srsi[0],curr_srsi[0],1)
+
         prev_mfi, curr_mfi = check_minima(prev,curr, df, mintab_i, flag=0)
         if len(prev_mfi)>0 and len(curr_mfi)>0:
             if prev_mfi[1] < curr_mfi[1]:
                 if df['close'].iloc[int(prev_mfi[0])] > df['close'].iloc[int(curr_mfi[0])]:
                     div_i = (prev_mfi[0],curr_mfi[0],1)
-                     
+        prev_obv, curr_obv = check_minima(prev,curr, df, maxtab_o, flag=0)
+        if len(prev_obv)>0 and len(curr_obv)>0:
+            if prev_obv[1] < curr_obv[1]:
+                if df['close'].iloc[int(prev_obv[0])] > df['close'].iloc[int(curr_obv[0])]:
+                    div_o = (prev_obv[0],curr_obv[0],1)
+        
         # Hidden Bull Div - MACD lower Low, price higher low
         if prev[1] > curr[1]:
             if df['close'].iloc[int(prev[0])] < df['close'].iloc[int(curr[0])]:
                 div_m = (prev[0],curr[0],2)
 
+        
         prev_rsi, curr_rsi = check_minima(prev,curr, df, mintab_r, flag=0)
         if len(prev_rsi)>0 and len(curr_rsi)>0:
             if prev_rsi[1] > curr_rsi[1]:
                 if df['close'].iloc[int(prev_rsi[0])] < df['close'].iloc[int(curr_rsi[0])]:
                     div_r = (prev_rsi[0],curr_rsi[0],2)
-            
+                    
+        prev_srsi, curr_srsi = check_minima(prev,curr, df, mintab_sr, flag=0)
+        if len(prev_srsi)>0 and len(curr_srsi)>0:
+            if prev_srsi[1] > curr_srsi[1]:
+                if df['close'].iloc[int(prev_srsi[0])] < df['close'].iloc[int(curr_srsi[0])]:
+                    div_sr = (prev_srsi[0],curr_srsi[0],2)
+
         prev_mfi, curr_mfi = check_minima(prev,curr, df, mintab_i, flag=0)
         if len(prev_mfi)>0 and len(curr_mfi)>0:
             if prev_mfi[1] > curr_mfi[1]:
                 if df['close'].iloc[int(prev_mfi[0])] < df['close'].iloc[int(curr_mfi[0])]:
                     div_i = (prev_mfi[0],curr_mfi[0],2)
-    return div_m,div_r,div_i
+        prev_obv, curr_obv = check_minima(prev,curr, df, maxtab_o, flag=0)
+        if len(prev_obv)>0 and len(curr_obv)>0:
+            if prev_obv[1] > curr_obv[1]:
+                if df['close'].iloc[int(prev_obv[0])] < df['close'].iloc[int(curr_obv[0])]:
+                    div_o = (prev_obv[0],curr_obv[0],2)
+    return div_m,div_r,div_sr,div_i, div_o
 
-
-def signal_to_ts(df, div_m,div_r,div_i):
+def signal_to_ts(df, div_m,div_r,div_sr,div_i,div_o):
     #Step 1 Convert signal to Vectors
     vector_macd = []
     vector_price = []
     start = []
     end = []
     signal_type = []
-    StochRSI = []
+    stochRSI = []
     MFI = []
      
     for i in range(0,len(div_m)):
@@ -371,7 +429,7 @@ def signal_to_ts(df, div_m,div_r,div_i):
     
         start.append(df['date'].loc[div_m[i][0]])
         end.append(df['date'].loc[div_m[i][1]])
-        if(div_m[i][2]==1):
+        if div_m[i][2]==1:
             signal_type.append('Bullish')
         elif div_m[i][2]==2:
             signal_type.append('Hidden Bullish')
@@ -379,15 +437,23 @@ def signal_to_ts(df, div_m,div_r,div_i):
             signal_type.append('Bearish')
         elif div_m[i][2]==4:
             signal_type.append('Hidden Bearish')
+        elif div_m[i][2]==5:
+            signal_type.append('Exagerated Bear')
+        elif div_m[i][2]==6:
+            signal_type.append('Exagerated Bull')  
 
         if div_r[i]:
-            StochRSI.append(True)
+            RSI.append(True)
         else:
-            StochRSI.append(False)
+            RSI.append(False)
         if div_i[i]:
             MFI.append(True)
         else:
             MFI.append(False)
+        if div_sr[i]:
+            stochRSI.append(True)
+        else:
+            stochRSI.append(False)
 
     signal_cosine = []
     for i in range(0, len(vector_macd)):
@@ -408,12 +474,14 @@ def signal_to_ts(df, div_m,div_r,div_i):
     else:
         return None
 
-def divergence_ts(df,div_m,div_r,div_i):
+def divergence_ts(df,div_m,div_r,div_sr,div_i, div_o):
     start = 0
     end = 0
     signal_type = 0
-    StochRSI = 0
+    RSI = 0
+    stochRSI = 0
     MFI = 0
+    obv_osc = 0
     df_signal = {} #pd.DataFrame()
     #print(div_m)
     #for i in range(len(div_m)):
@@ -428,22 +496,37 @@ def divergence_ts(df,div_m,div_r,div_i):
             signal_type = 'Bearish'
         elif div_m[2]==4:
             signal_type = 'Hidden Bearish'
-        
+        elif div_m[2]==5:
+            signal_type = 'Exagerrated Bear'
+        elif div_m[2]==6:
+            signal_type = 'Exagerrated Bull'
+
+
         if div_r:
-            StochRSI = True
+            RSI = True
         else:
-            StochRSI = False
+            RSI = False
+        if div_sr:
+            stochRSI = True
+        else:
+            stochRSI = False
         if div_i:
             MFI = True
         else:
             MFI = False
+        if div_o:
+            obv_osc = True
+        else:
+            obv_osc = False
         
-        df_signal['start']=start
-        df_signal['end']=end
-        df_signal['type']=signal_type
-        df_signal['stochrsi_div']=StochRSI
-        df_signal['mfi_div']=MFI
-        df_signal['cosine']=0
+        df_signal['start']          = start
+        df_signal['end']            = end
+        df_signal['type']           = signal_type
+        df_signal['stochrsi_div']   = stochRSI
+        df_signal['mfi_div']        = MFI
+        df_signal['rsi_div']        = RSI
+        df_signal['obv_div']        = obv_osc
+        df_signal['cosine']         = 0
     #print(len(df_signal))
     if len(df_signal)>0:
         return df_signal
@@ -456,21 +539,21 @@ def find_divergence(df, df_weekly, duration):
                                                                                                                                                            
     df = df.reset_index(level=None, drop=False, inplace=False, col_level=0)
     df = add_macd(df)
-    df = add_kalman(df)
+    #df = add_kalman(df)
     df = rolling_volatility(df,duration)
     df = add_rsi(df)
     df = add_stochrsi(df)
     df = add_mfi(df)
-    #df = add_obv(df)
-    #df = add_obv_osc(df)
+    df = add_obv(df)
+    df = add_obv_osc(df)
     df = df.fillna(0)
     
-    div_m,div_r,div_i = add_divergence(df)
-    #print(div_m,div_r,div_i)
+    div_m,div_r,div_sr,div_i, div_o = add_divergence(df)
+    #print(div_m,div_r,div_sr,div_i,div_o)
     #print(type(div_m))
     div_df = {}
-    div_df = divergence_ts(df,div_m,div_r,div_i)
-    #print(div_df)
+    div_df = divergence_ts(df,div_m,div_r,div_sr,div_i, div_o)
+    print(div_df)
     if(div_df is None):
         return None
     else:

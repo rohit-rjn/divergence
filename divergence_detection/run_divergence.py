@@ -27,6 +27,7 @@ def get_signals(token_list,duration):
                     df_new = resample_data(df, curr_duration[0],curr_duration[1])
                     df_new = df_new.reset_index(level=None, drop=False, inplace=False, col_level=0)
                     div_df = find_divergence(df_new, df_weekly, curr_duration[0])
+                    #print(div_df)
                     if (div_df is not None):
                         dict_div = {}
                         dict_div['token']        = token_list[i]
@@ -37,6 +38,8 @@ def get_signals(token_list,duration):
                         dict_div['cosine']       = div_df['cosine']
                         dict_div['stochrsi_div'] = div_df['stochrsi_div']
                         dict_div['mfi_div']      = div_df['mfi_div']
+                        dict_div['rsi_div']      = div_df['rsi_div']
+                        dict_div['obv_div']      = div_df['obv_div']
                         dict_div['market_state'] = div_df['market_state']
                         dict_div['volatility']   = div_df['volatility']
                         hourly_signal[j].append(dict_div)
@@ -53,7 +56,7 @@ def get_signals(token_list,duration):
     return(signals_small)
 
 if __name__=="__main__":
-    token_list = ['LTC'] #, 'ETH', 'XRP', 'LTC', 'BAB', 'BCH', 'XPP']
+    token_list = ['BTC', 'ETH', 'XRP', 'LTC', 'BAB', 'BCH', 'XPP']
     duration_list = ['2 HOUR','4 HOUR','8 HOUR','12 HOUR']
     signals = get_signals(token_list,duration_list)
     print(signals)

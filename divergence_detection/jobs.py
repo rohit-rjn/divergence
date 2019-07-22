@@ -37,6 +37,8 @@ def get_signals(tokens, durations):
                         dict_div['cosine']       = round(div_df['cosine'], 3)
                         dict_div['stochrsi_div'] = div_df['stochrsi_div']
                         dict_div['mfi_div']      = div_df['mfi_div']
+                        dict_div['rsi_div']      = div_df['rsi_div']
+                        dict_div['obv_div']      = div_df['obv_div']
                         dict_div['market_state'] = div_df['market_state']
                         dict_div['volatility']   = div_df['volatility']
                         signals.append(dict_div)
@@ -50,22 +52,10 @@ def get_signals(tokens, durations):
     return(signals)
 
 def post_signals():
-    tokens = ['BTC', 'ETH', 'XRP', 'LTC', 'BAB', 'BCH', 'EOS', 
-              'BAT', 'XLM', 'BNB', 'ADA', 'BSV', 'TRX', 'XTZ', 
-              'ATOM', 'ETC', 'NEO', 'XEM', 'MKR', 'ONT', 'LINK', 
-              'ZEC', 'VET', 'CRO', 'DOGE', 'QTUM', 'OMG', 'DCR', 
-              'HOT', 'WAVES', 'BTT','TUSD', 'LSK', 'NANO', 'REP',
-              'BCD', 'RVN', 'ZIL', 'ZRX', 'ICX','XVG', 'PAX', 
-              'BTS', 'BCN', 'DGB', 'NPXS', 'HT', 'IOST', 'AE', 
-              'KMD', 'ABBD', 'SC', 'ENJ', 'STEEM', 'AOA', 'QBIT', 
-              'BTM','MAID', 'THR', 'SOLVE', 'INB', 'KCS','THETA', 
-              'WTC', 'STRAT', 'SNT', 'CNX', 'DENT', 'GNT', 'MCO', 
-              'ELF', 'DAI', 'ARDR', 'FCT', 'XIN', 'VEST', 'TRUE', 
-              'ZEN', 'SAN', 'PAI', 'ARK','MONA', 'DGD', 'GXC', 'WAX',
-              'CLAM', 'AION', 'LRC', 'MATIC', 'MANA', 'ELA', 'LOOM',
-              'PPT', 'NET']
+    tokens = ['BTC', 'ETH', 'XRP', 'LTC','BCH', 'EOS','BSV', 'TRX', 'ETC' ]
+              
 
-    tokens = tokens[:20] # Top 20
+    #tokens = tokens[:20] # Top 20
     durations = ['2 HOUR','4 HOUR','8 HOUR','12 HOUR']
     signals = get_signals(tokens, durations)
     
