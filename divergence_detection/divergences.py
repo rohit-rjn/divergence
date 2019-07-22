@@ -549,11 +549,8 @@ def find_divergence(df, df_weekly, duration):
     df = df.fillna(0)
     
     div_m,div_r,div_sr,div_i, div_o = add_divergence(df)
-    #print(div_m,div_r,div_sr,div_i,div_o)
-    #print(type(div_m))
     div_df = {}
     div_df = divergence_ts(df,div_m,div_r,div_sr,div_i, div_o)
-    print(div_df)
     if(div_df is None):
         return None
     else:
