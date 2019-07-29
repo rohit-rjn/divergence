@@ -29,18 +29,21 @@ def get_signals(tokens, durations):
                     div_df = divergences.find_divergence(df_new, df_weekly, duration_split[0])
                     if (div_df is not None):
                         dict_div = {}
-                        dict_div['token']        = token
-                        dict_div['duration']     = duration
-                        dict_div['start']        = div_df['start'].strftime("%Y-%m-%d %H:%M")
-                        dict_div['end']          = div_df['end'].strftime("%Y-%m-%d %H:%M")
-                        dict_div['type']         = div_df['type']
-                        dict_div['cosine']       = round(div_df['cosine'], 3)
-                        dict_div['stochrsi_div'] = div_df['stochrsi_div']
-                        dict_div['mfi_div']      = div_df['mfi_div']
-                        dict_div['rsi_div']      = div_df['rsi_div']
-                        dict_div['obv_div']      = div_df['obv_div']
-                        dict_div['market_state'] = div_df['market_state']
-                        dict_div['volatility']   = div_df['volatility']
+                        dict_div['token']         = token
+                        dict_div['duration']      = duration
+                        dict_div['start']         = div_df['start'].strftime("%Y-%m-%d %H:%M")
+                        dict_div['end']           = div_df['end'].strftime("%Y-%m-%d %H:%M")
+                        dict_div['type']          = div_df['type']
+                        dict_div['cosine']        = round(div_df['cosine'], 3)
+                        dict_div['stochrsi_div']  = div_df['stochrsi_div']
+                        dict_div['mfi_div']       = div_df['mfi_div']
+                        dict_div['rsi_div']       = div_df['rsi_div']
+                        dict_div['obv_div']       = div_df['obv_div']
+                        dict_div['market_state']  = div_df['market_state']
+                        dict_div['volatility']    = div_df['volatility']
+                        dict_div['macd_20_50_9']  = div_df['macd_20_50_9']
+                        dict_div['macd_50_100_20']= div_df['macd_50_100_20']
+                        dict_div['macd_50_100_9'] = div_df['macd_50_100_9']
                         signals.append(dict_div)
                 except Exception as e:
                     print(e)

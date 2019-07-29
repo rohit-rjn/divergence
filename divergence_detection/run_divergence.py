@@ -1,5 +1,5 @@
 from divergences import find_divergence
-from candles import get_hourly, get_daily, resample_data
+from candles import get_hourly, get_daily,get_minutely, resample_data
 import json
 import datetime 
 import warnings
@@ -42,6 +42,9 @@ def get_signals(token_list,duration):
                         dict_div['obv_div']      = div_df['obv_div']
                         dict_div['market_state'] = div_df['market_state']
                         dict_div['volatility']   = div_df['volatility']
+                        dict_div['macd_20_50_9'] = div_df['macd_20_50_9']
+                        dict_div['macd_50_100_20']= div_df['macd_50_100_20']
+                        dict_div['macd_50_100_9'] = div_df['macd_50_100_9']
                         hourly_signal[j].append(dict_div)
                 except Exception as e:
                     print(e)
@@ -56,7 +59,7 @@ def get_signals(token_list,duration):
     return(signals_small)
 
 if __name__=="__main__":
-    token_list = ['BTC', 'ETH', 'XRP', 'LTC', 'BAB', 'BCH', 'XPP']
-    duration_list = ['2 HOUR','4 HOUR','8 HOUR','12 HOUR']
+    token_list = ['BTC','ETH', 'XRP', 'LTC', 'BAB', 'BCH', 'XPP']
+    duration_list = ['1 HOUR','2 HOUR','4 HOUR','8 HOUR','12 HOUR']
     signals = get_signals(token_list,duration_list)
     print(signals)

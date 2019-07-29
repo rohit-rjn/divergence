@@ -98,6 +98,23 @@ def get_hourly(symbol, market="USD"):
     else:
         raise ValueError(data["Message"])
 
+def get_minutely(symbol, market="USD"):
+    params = {'fsym': symbol,
+              'tsym': market,
+              'limit': 2000,
+              'api_key': api_key}
+    response = requests.get('https://min-api.cryptocompare.com/data/histominute', params=params)
+    data = response.json()
+    if data['Response'] == "Success":
+        df = pd.DataFrame(data['Data'])
+        df['date'] = pd.to_datetime(df['time'], unit='s')
+        df['volume'] = df['volumefrom']
+        df = df.set_index(df.date, drop=True)
+        df = df[['low', 'high', 'open', 'close', 'volume']]
+        return(df)
+    else:
+        raise ValueError(data["Message"])
+
 def get_daily(symbol, market="USD"):
     params = {'fsym': 'ETH',
               'tsym': market,
