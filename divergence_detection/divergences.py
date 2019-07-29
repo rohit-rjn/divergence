@@ -272,7 +272,7 @@ def add_divergence(df):
     div_o = []
     #print(start, end, maxtab_m2[-1][0],maxtab_m1[-1][0])
     #print(len(maxtab_m2),len(maxtab_m1))
-    if maxtab_m2[-1][0] > start: #end-3 :
+    if maxtab_m2[-1][0] > end-4 :
         if maxtab_m1[-1][0]!=maxtab_m2[-1][0]:
             curr = maxtab_m2[-1]
             prev = maxtab_m1[-1]
@@ -344,7 +344,7 @@ def add_divergence(df):
                 if df['close'].iloc[int(prev_obv[0])] < df['close'].iloc[int(curr_obv[0])]:
                     div_o = (prev_obv[0],curr_obv[0],4)
     
-    if mintab_m2[-1][0]> start : #end-4:
+    if mintab_m2[-1][0]> end-4:
         if mintab_m1[-1][0]!=mintab_m2[-1][0]:
             curr = mintab_m2[-1]
             prev = mintab_m1[-1]
