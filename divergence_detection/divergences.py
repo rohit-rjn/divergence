@@ -640,7 +640,7 @@ def find_divergence(df, df_weekly, duration):
     
     div_df = {}
     div_df = divergence_ts(df,div_m,div_r,div_sr,div_i, div_o, div_macd)
-    print(div_df)
+    #print(div_df)
     if(div_df is None):
         return None
     else:
