@@ -5,26 +5,32 @@ import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
-def get_df(token):
-    df = get_hourly(token)
+def get_df(token,signal_type):
+    if signal_type == 'hour':
+        df = get_hourly(token)
+    elif signal_type == 'minute':
+        df = get_minutely(token)
+        #print(len(df))
     df_daily = get_daily(token)
     df_weekly = resample_data(df_daily, '1','WEEK')
     df_weekly = df_weekly.reset_index(level=None, drop=False, inplace=False, col_level=0)
     return df, df_weekly
 
-def get_signals(token_list,duration):
+
+def get_signals(token_list,duration, signal_type):
     signals =[]
     hourly_signal = [[] for _ in range(len(duration))]
     
     for i in range(len(token_list)):
         print(token_list[i])
         try:
-            df, df_weekly = get_df(token_list[i])
+            df, df_weekly = get_df(token_list[i],signal_type)
             for j in range(len(duration)):
                 try:
                     curr_duration = duration[j]                
                     curr_duration = curr_duration.split()
                     df_new = resample_data(df, curr_duration[0],curr_duration[1])
+                    print(len(df_new))
                     df_new = df_new.reset_index(level=None, drop=False, inplace=False, col_level=0)
                     div_df = find_divergence(df_new, df_weekly, curr_duration[0])
                     #print(div_df)
@@ -58,8 +64,12 @@ def get_signals(token_list,duration):
         signals_small[duration[i]]=hourly_signal[i]
     return(signals_small)
 
+
 if __name__=="__main__":
-    token_list = ['BTC','ETH', 'XRP', 'LTC', 'BAB', 'BCH', 'XPP']
+    token_list = ['BTC']#,'ETH', 'XRP', 'LTC', 'BAB', 'BCH', 'XPP']
     duration_list = ['1 HOUR','2 HOUR','4 HOUR','8 HOUR','12 HOUR']
-    signals = get_signals(token_list,duration_list)
-    print(signals)
+    #signals = get_signals(token_list,duration_list,'hour')
+    minutes_list = ['1 MIN','10 MIN']
+    signals_minutely = get_signals(token_list,minutes_list,'minute')
+    #print(signals)
+    print(signals_minutely)

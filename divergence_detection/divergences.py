@@ -270,9 +270,8 @@ def add_divergence(df):
     div_r = []
     div_i = []
     div_o = []
-    #print(start, end, maxtab_m2[-1][0],maxtab_m1[-1][0])
-    #print(len(maxtab_m2),len(maxtab_m1))
-    if maxtab_m2[-1][0] > end-4 :
+
+    if maxtab_m2[-1][0] > end-4:
         if maxtab_m1[-1][0]!=maxtab_m2[-1][0]:
             curr = maxtab_m2[-1]
             prev = maxtab_m1[-1]
@@ -280,7 +279,7 @@ def add_divergence(df):
             curr = maxtab_m2[-1]
             prev = maxtab_m1[-2]
         # Regular bear Div - MACD lower high and Price higher high
-        #print(curr[1],prev)
+        #print(prev[1],curr[1],df['close'].iloc[int(prev[0])] ,df['close'].iloc[int(curr[0])])
         if prev[1] > curr[1]:
             #df_close_range_low = df['close'].iloc[int(prev[0])] + 0.01*df['close'].iloc[int(prev[0])]
             #df_close_range_high = df['close'].iloc[int(prev[0])] - 0.01*df['close'].iloc[int(prev[0])]
@@ -627,7 +626,6 @@ def find_divergence(df, df_weekly, duration):
     df = df.fillna(0)
     
     div_m,div_r,div_sr,div_i, div_o = add_divergence(df)
-
     macd_var = [[20,50,9],[50,100,20],[50,100,9]]
     div_macd = [] 
     for i in range(len(macd_var)):
