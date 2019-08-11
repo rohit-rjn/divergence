@@ -591,24 +591,26 @@ def divergence_ts(df,div_m,div_r,div_sr,div_i, div_o, div_macd):
         #df_signal['macd_50_100_20'] = {'start':df['date'].loc[div_macd[1][0]],'end':df['date'].loc[div_macd[1][1]]}
         #df_signal['macd_50_100_9']  = {'start':df['date'].loc[div_macd[2][0]],'end':df['date'].loc[div_macd[2][1]]}
         if div_macd[0]:
-            df_signal['macd_20_50_9'] = {'start':df['date'].loc[div_macd[0][0]],'end':df['date'].loc[div_macd[0][1]]}
+            df_signal['macd_20_50_9'] = "Start: {0} / End {1}".format(df['date'].loc[div_macd[0][0]].strftime("%Y-%m-%d %H:%M"),
+                                                                      df['date'].loc[div_macd[0][1]].strftime("%Y-%m-%d %H:%M"))
         else:
-            df_signal['macd_20_50_9'] = False
+            df_signal['macd_20_50_9'] = "No Signal"
         if div_macd[1]:
-            df_signal['macd_50_100_20'] = {'start':df['date'].loc[div_macd[2][0]],'end':df['date'].loc[div_macd[0][1]]}
+            df_signal['macd_50_100_20'] = "Start: {0} / End {1}".format(df['date'].loc[div_macd[2][0]].strftime("%Y-%m-%d %H:%M"),
+                                                                        df['date'].loc[div_macd[0][1]].strftime("%Y-%m-%d %H:%M"))
         else:
-            df_signal['macd_50_100_20'] = False
+            df_signal['macd_50_100_20'] = "No Signal"
         if div_macd[2]:
-            df_signal['macd_50_100_9'] = {'start':df['date'].loc[div_macd[2][0]],'end':df['date'].loc[div_macd[0][1]]}
+            df_signal['macd_50_100_9'] = "Start: {0} / End {1}".format(df['date'].loc[div_macd[2][0]].strftime("%Y-%m-%d %H:%M"),
+                                                                       df['date'].loc[div_macd[0][1]].strftime("%Y-%m-%d %H:%M"))
         else:
-            df_signal['macd_50_100_9'] = False
+            df_signal['macd_50_100_9'] = "No Signal"
 
     #print(len(df_signal))
     if len(df_signal)>0:
         return df_signal
     else:
         return None
-
 
 def find_divergence(df, df_weekly, duration):
     #duration= duration.split()

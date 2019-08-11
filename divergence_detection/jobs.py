@@ -61,14 +61,14 @@ def post_signals():
     tokens = ['BTC', 'ETH', 'XRP', 'LTC','BCH', 'EOS','BSV', 'TRX', 'ETC' ]
     #tokens = tokens[:20] # Top 20
     durations = ['2 HOUR','4 HOUR','8 HOUR','12 HOUR']
-    signals = get_signals(tokens, durations,'hour')
+    signals = get_signals(tokens, durations, 'hour')
 
     #print(signals)
 
 def post_signals_minutely():
     minutes_list = ['5 MIN','10 MIN','15 MIN','20 MIN', '30 MIN', '45 MIN']
     token_list = ['BTC']
-    signals_minutely = get_signals(token_list,minutes_list,'minute')
+    signals_minutely = get_signals(token_list,minutes_list, 'minute')
     
     #print(signals_minutely)
 
